@@ -1,12 +1,12 @@
 ;;; gtags.el --- gtags facility for Emacs
 
-;;
-;; Copyright (c) 1997, 1998, 1999, 2000, 2006, 2007, 2008, 2009, 2010
-;;		2011
-;;	Tama Communications Corporation
-;;
-;; This file is part of GNU GLOBAL.
-;;
+;; Copyright (C) 1997-2000, 2006-2011  Tama Communications Corporation
+;; Copyright (C) 2011 Leo Liu
+
+;; Author: Tama Communications Corporation
+;; Maintainer: Leo Liu <sdl.web@gmail.com>
+;; Keywords: tools
+
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
@@ -19,12 +19,11 @@
 ;; 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-;;
+
+;;; Commentary:
 
 ;; GLOBAL home page is at: http://www.gnu.org/software/global/
 ;; Author: Tama Communications Corporation
-;; Version: 2.10
-;; Keywords: tools
 ;; Required version: GLOBAL 5.9 or later
 
 ;; Gtags-mode is implemented as a minor mode so that it can work with any
@@ -36,32 +35,27 @@
 ;;	(add-to-list 'load-path "~/.emacs.d")
 ;;	(autoload 'gtags-mode "gtags" "" t)
 ;;
-;; If you hope gtags-mode is on in c-mode then please add c-mode-hook to your
-;; $HOME/.emacs like this.
+;; If you hope gtags-mode is on in c-mode then please add c-mode-hook
+;; to your $HOME/.emacs like this.
 ;;
-;; (add-hook 'c-mode-hook
-;;    '(lambda ()
-;;       (gtags-mode 1)
-;; ))
-;;
+;; (add-hook 'c-mode-hook (lambda () (gtags-mode 1)))
+
 ;; There are two hooks, gtags-mode-hook and gtags-select-mode-hook.
 ;; The usage of the hook is shown as follows.
-;;
-;; [Setting to reproduce old 'Gtags mode']
-;;
+
+;; * Setting to reproduce old 'Gtags mode'
+
 ;; (add-hook 'gtags-mode-hook
 ;;   '(lambda ()
 ;;      (setq gtags-pop-delete t)
-;;      (setq gtags-path-style 'absolute)
-;; ))
-;;
-;; [Setting to make 'Gtags select mode' easy to see]
-;;
+;;      (setq gtags-path-style 'absolute)))
+
+;; * Setting to make 'Gtags select mode' easy to see
+
 ;; (add-hook 'gtags-select-mode-hook
 ;;   '(lambda ()
 ;;      (setq hl-line-face 'underline)
-;;      (hl-line-mode 1)
-;; ))
+;;      (hl-line-mode 1)))
 
 ;;; Code
 
