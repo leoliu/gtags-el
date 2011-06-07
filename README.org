@@ -1,0 +1,3 @@
+#+title: Leo's Personal gtags.el
+
+This is a modified version of gtags.el from GNU Global 5.9.6.
