@@ -59,10 +59,6 @@
 
 ;;; Code
 
-(defvar gtags-mode nil
-  "Non-nil if Gtags mode is enabled.")
-(make-variable-buffer-local 'gtags-mode)
-
 ;;;
 ;;; Customizing gtags-mode
 ;;;
@@ -578,7 +574,7 @@
   (message "gtags-make-complete-list: Deprecated. You need not call this command any longer."))
 
 ;;;###autoload
-(defun gtags-mode (&optional forces)
+(define-minor-mode gtags-mode
   "Toggle Gtags mode, a minor mode for browsing source code using GLOBAL.
 
 Specify the root directory of project.
@@ -612,34 +608,25 @@ Key definitions:
 \\{gtags-mode-map}
 Turning on Gtags mode calls the value of the variable `gtags-mode-hook'
 with no args, if that value is non-nil."
-  (interactive)
-  (or (assq 'gtags-mode minor-mode-alist)
-      (setq minor-mode-alist (cons '(gtags-mode " Gtags") minor-mode-alist)))
-  (or (assq 'gtags-mode minor-mode-map-alist)
-      (setq minor-mode-map-alist
-      (cons (cons 'gtags-mode gtags-mode-map) minor-mode-map-alist)))
-  (setq gtags-mode
-      (if (null forces)
-          (not gtags-mode)
-        (> (prefix-numeric-value forces) 0)))
-  (run-hooks 'gtags-mode-hook)
+  :lighter " Gtags"
   ;; Suggested key mapping
-  (when gtags-suggested-key-mapping
-    (define-key gtags-mode-map "\eh" 'gtags-display-browser)
-    (define-key gtags-mode-map "\C-]" 'gtags-find-tag-from-here)
-    (define-key gtags-mode-map "\C-t" 'gtags-pop-stack)
-    (define-key gtags-mode-map "\eP" 'gtags-find-file)
-    (define-key gtags-mode-map "\ef" 'gtags-parse-file)
-    (define-key gtags-mode-map "\eg" 'gtags-find-with-grep)
-    (define-key gtags-mode-map "\eI" 'gtags-find-with-idutils)
-    (define-key gtags-mode-map "\es" 'gtags-find-symbol)
-    (define-key gtags-mode-map "\er" 'gtags-find-rtag)
-    (define-key gtags-mode-map "\et" 'gtags-find-tag)
-    (define-key gtags-mode-map "\ev" 'gtags-visit-rootdir))
-  ; Mouse key mapping
-  (unless gtags-disable-pushy-mouse-mapping
-    (define-key gtags-mode-map [mouse-3] 'gtags-pop-stack)
-    (define-key gtags-mode-map [mouse-2] 'gtags-find-tag-by-event)))
+  (when gtags-mode
+    (when gtags-suggested-key-mapping
+      (define-key gtags-mode-map "\M-h" 'gtags-display-browser)
+      (define-key gtags-mode-map "\C-]" 'gtags-find-tag-from-here)
+      (define-key gtags-mode-map "\C-t" 'gtags-pop-stack)
+      (define-key gtags-mode-map "\M-P" 'gtags-find-file)
+      (define-key gtags-mode-map "\M-f" 'gtags-parse-file)
+      (define-key gtags-mode-map "\M-g" 'gtags-find-with-grep)
+      (define-key gtags-mode-map "\M-I" 'gtags-find-with-idutils)
+      (define-key gtags-mode-map "\M-s" 'gtags-find-symbol)
+      (define-key gtags-mode-map "\M-r" 'gtags-find-rtag)
+      (define-key gtags-mode-map "\M-t" 'gtags-find-tag)
+      (define-key gtags-mode-map "\M-v" 'gtags-visit-rootdir))
+    ;; Mouse key mapping
+    (unless gtags-disable-pushy-mouse-mapping
+      (define-key gtags-mode-map [mouse-3] 'gtags-pop-stack)
+      (define-key gtags-mode-map [mouse-2] 'gtags-find-tag-by-event))))
 
 ;; make gtags select-mode
 (defun gtags-select-mode ()
