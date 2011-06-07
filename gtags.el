@@ -72,7 +72,7 @@
   :prefix "gtags-")
 
 (defcustom gtags-path-style 'root
-  "*Controls the style of path in [GTAGS SELECT MODE]."
+  "Controls the style of path in [GTAGS SELECT MODE]."
   :type '(choice (const :tag "Relative from the root of the current project" root)
                  (const :tag "Relative from the current directory" relative)
                  (const :tag "Absolute" absolute))
@@ -84,22 +84,22 @@
   :group 'gtags)
 
 (defcustom gtags-pop-delete nil
-  "*If non-nil, gtags-pop will delete the buffer."
+  "If non-nil, gtags-pop will delete the buffer."
   :group 'gtags
   :type 'boolean)
 
 (defcustom gtags-select-buffer-single nil
-  "*If non-nil, gtags select buffer is single."
+  "If non-nil, gtags select buffer is single."
   :group 'gtags
   :type 'boolean)
 
 (defcustom gtags-disable-pushy-mouse-mapping nil
-  "*If non-nil, mouse key mapping is disabled."
+  "If non-nil, mouse key mapping is disabled."
   :group 'gtags
   :type 'boolean)
 
 (defcustom gtags-suggested-key-mapping nil
-  "*If non-nil, suggested key mapping is enabled."
+  "If non-nil, suggested key mapping is enabled."
   :group 'gtags
   :type 'boolean)
 
