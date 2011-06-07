@@ -176,23 +176,21 @@
 ;;
 ;; utility
 ;;
-(defun gtags-match-string (n)
-  (buffer-substring (match-beginning n) (match-end n)))
-
 ;; Return a default tag to search for, based on the text at point.
 (defun gtags-current-token ()
   (cond
    ((looking-at "[0-9A-Za-z_]")
     (while (and (not (bolp)) (looking-at "[0-9A-Za-z_]"))
       (forward-char -1))
-    (if (not (looking-at "[0-9A-Za-z_]")) (forward-char 1)))
+    (unless (looking-at "[0-9A-Za-z_]")
+      (forward-char 1)))
    (t
     (while (looking-at "[ \t]")
       (forward-char 1))))
-  (if (and (bolp) (looking-at gtags-definition-regexp))
-      (goto-char (match-end 0)))
-  (if (looking-at gtags-symbol-regexp)
-      (gtags-match-string 0) nil))
+  (when (and (bolp) (looking-at gtags-definition-regexp))
+    (goto-char (match-end 0)))
+  (when (looking-at gtags-symbol-regexp)
+    (match-string 0)))
 
 ;; push current context to stack
 (defun gtags-push-context ()
@@ -254,11 +252,11 @@
         (let ((match-string (if (equal "" string) "\./\\(.*\\)" (concat ".*\\(" string ".*\\)"))))
           (while (not (eobp))
             (looking-at match-string)
-            (intern (gtags-match-string 1) complete-list)
+            (intern (match-string 1) complete-list)
             (forward-line)))
       (while (not (eobp))
         (looking-at gtags-symbol-regexp)
-        (intern (gtags-match-string 0) complete-list)
+        (intern (match-string 0) complete-list)
         (forward-line)))
     (kill-buffer (current-buffer))
     ; recover current buffer
@@ -595,10 +593,10 @@
     (beginning-of-line)
     (if (not (looking-at "[^ \t]+[ \t]+\\([0-9]+\\)[ \t]\\([^ \t]+\\)[ \t]"))
         (gtags-pop-context)
-      (setq line (string-to-number (gtags-match-string 1)))
+      (setq line (string-to-number (match-string 1)))
       ;; decode path name
       ;; The path is encoded by global(1) with the --encode-path="..." option.
-      (setq file (url-unhex-string (gtags-match-string 2)))
+      (setq file (url-unhex-string (match-string 2)))
       ;;
       ;; Why should we load new file before killing current-buffer?
       ;;
