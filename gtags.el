@@ -629,7 +629,7 @@ with no args, if that value is non-nil."
       (define-key gtags-mode-map [mouse-2] 'gtags-find-tag-by-event))))
 
 ;; make gtags select-mode
-(defun gtags-select-mode ()
+(define-derived-mode gtags-select-mode nil "Gtags-Select"
   "Major mode for choosing a tag from tags list.
 
 Select a tag in tags list and move there.
@@ -641,17 +641,12 @@ Key definitions:
 \\{gtags-select-mode-map}
 Turning on Gtags-Select mode calls the value of the variable
 `gtags-select-mode-hook' with no args, if that value is non-nil."
-  (interactive)
-  (kill-all-local-variables)
-  (use-local-map gtags-select-mode-map)
-  (setq buffer-read-only t
-	truncate-lines t
-        major-mode 'gtags-select-mode
-        mode-name "Gtags-Select")
+  :abbrev-table nil
+  (setq buffer-read-only t)
+  (setq truncate-lines t)
   (setq gtags-current-buffer (current-buffer))
   (goto-char (point-min))
   (message "[GTAGS SELECT MODE] %d lines" (count-lines (point-min) (point-max)))
-  (run-hooks 'gtags-select-mode-hook)
   ;; Mouse key mapping
   (unless gtags-disable-pushy-mouse-mapping
     (define-key gtags-select-mode-map [mouse-3] 'gtags-pop-stack)
