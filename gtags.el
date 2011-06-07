@@ -124,8 +124,6 @@
   "Regexp matching tag definition name.")
 (defvar gtags-mode-map (make-sparse-keymap)
   "Keymap used in gtags mode.")
-(defvar gtags-running-xemacs (string-match "XEmacs\\|Lucid" emacs-version)
-  "Whether we are running XEmacs/Lucid Emacs")
 (defvar gtags-rootdir nil
   "Root directory of source tree.")
 ;
@@ -418,11 +416,9 @@
     (if (= 0 (count-lines (point-min) (point-max)))
         (progn (setq tagname "main")
                (setq flag ""))
-      (if gtags-running-xemacs
-          (goto-char (event-point event))
-        (select-window (posn-window (event-end event)))
-        (set-buffer (window-buffer (posn-window (event-end event))))
-        (goto-char (posn-point (event-end event))))
+      (select-window (posn-window (event-end event)))
+      (set-buffer (window-buffer (posn-window (event-end event))))
+      (goto-char (posn-point (event-end event)))
       (setq tagname (gtags-current-token))
       (setq flag "C"))
     (if (not tagname)
@@ -444,10 +440,9 @@
 (defun gtags-select-tag-by-event (event)
   "Select a tag in [GTAGS SELECT MODE] and move there."
   (interactive "e")
-  (if gtags-running-xemacs (goto-char (event-point event))
-    (select-window (posn-window (event-end event)))
-    (set-buffer (window-buffer (posn-window (event-end event))))
-    (goto-char (posn-point (event-end event))))
+  (select-window (posn-window (event-end event)))
+  (set-buffer (window-buffer (posn-window (event-end event))))
+  (goto-char (posn-point (event-end event)))
   (gtags-push-context)
   (gtags-select-it nil))
 
@@ -693,12 +688,8 @@ with no args, if that value is non-nil."
       nil)
   ; Mouse key mapping
   (if gtags-disable-pushy-mouse-mapping nil
-      (if (not gtags-running-xemacs) nil
-       (define-key gtags-mode-map 'button3 'gtags-pop-stack)
-       (define-key gtags-mode-map 'button2 'gtags-find-tag-by-event))
-      (if gtags-running-xemacs nil
-       (define-key gtags-mode-map [mouse-3] 'gtags-pop-stack)
-       (define-key gtags-mode-map [mouse-2] 'gtags-find-tag-by-event))))
+    (define-key gtags-mode-map [mouse-3] 'gtags-pop-stack)
+    (define-key gtags-mode-map [mouse-2] 'gtags-find-tag-by-event)))
 
 ;; make gtags select-mode
 (defun gtags-select-mode ()
@@ -726,12 +717,8 @@ Turning on Gtags-Select mode calls the value of the variable
   (run-hooks 'gtags-select-mode-hook)
   ; Mouse key mapping
   (if gtags-disable-pushy-mouse-mapping nil
-      (if (not gtags-running-xemacs) nil
-          (define-key gtags-select-mode-map 'button3 'gtags-pop-stack)
-          (define-key gtags-select-mode-map 'button2 'gtags-select-tag-by-event))
-      (if gtags-running-xemacs nil
-          (define-key gtags-select-mode-map [mouse-3] 'gtags-pop-stack)
-          (define-key gtags-select-mode-map [mouse-2] 'gtags-select-tag-by-event))))
+    (define-key gtags-select-mode-map [mouse-3] 'gtags-pop-stack)
+    (define-key gtags-select-mode-map [mouse-2] 'gtags-select-tag-by-event)))
 
 (provide 'gtags)
 
