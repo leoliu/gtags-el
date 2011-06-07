@@ -106,66 +106,52 @@
 ;; Variables
 (defvar gtags-current-buffer nil
   "Current buffer.")
+
 (defvar gtags-buffer-stack nil
   "Stack for tag browsing.")
+
 (defvar gtags-point-stack nil
   "Stack for tag browsing.")
+
 (defvar gtags-history-list nil
   "Gtags history list.")
+
 (defconst gtags-symbol-regexp "[A-Za-z_][A-Za-z_0-9]*"
   "Regexp matching tag name.")
+
 (defconst gtags-definition-regexp "#[ \t]*define[ \t]+\\|ENTRY(\\|ALTENTRY("
   "Regexp matching tag definition name.")
-(defvar gtags-mode-map (make-sparse-keymap)
+
+(defvar gtags-mode-map
+  (let ((m (make-sparse-keymap)))
+    (define-key m "\M-*"   'gtags-pop-stack)
+    (define-key m "\M-."   'gtags-find-tag)
+    (define-key m "\C-x4." 'gtags-find-tag-other-window)
+    m)
   "Keymap used in gtags mode.")
+
 (defvar gtags-rootdir nil
   "Root directory of source tree.")
-;
-; New key assignment to avoid conflicting with ordinary assignments.
-;
-(define-key gtags-mode-map "\e*" 'gtags-pop-stack)
-(define-key gtags-mode-map "\e." 'gtags-find-tag)
-(define-key gtags-mode-map "\C-x4." 'gtags-find-tag-other-window)
-;
-; You can make key mappings using 'gtags-mode-hook in your $HOME/.emacs:
-; The following two brings the same result.
-;
-; (add-hook 'gtags-mode-hook
-;   '(lambda ()
-;         (setq gtags-suggested-key-mapping t)
-; ))
-; (add-hook 'gtags-mode-hook
-;   '(lambda ()
-;         (define-key gtags-mode-map "\eh" 'gtags-display-browser)
-;         (define-key gtags-mode-map "\C-]" 'gtags-find-tag-from-here)
-;         (define-key gtags-mode-map "\C-t" 'gtags-pop-stack)
-;         (define-key gtags-mode-map "\eP" 'gtags-find-file)
-;         (define-key gtags-mode-map "\ef" 'gtags-parse-file)
-;         (define-key gtags-mode-map "\eg" 'gtags-find-with-grep)
-;         (define-key gtags-mode-map "\eI" 'gtags-find-with-idutils)
-;         (define-key gtags-mode-map "\es" 'gtags-find-symbol)
-;         (define-key gtags-mode-map "\er" 'gtags-find-rtag)
-;         (define-key gtags-mode-map "\et" 'gtags-find-tag)
-;         (define-key gtags-mode-map "\ev" 'gtags-visit-rootdir)
-; ))
 
-(defvar gtags-select-mode-map (make-sparse-keymap)
+(defvar gtags-select-mode-map
+  (let ((m (make-sparse-keymap)))
+    (define-key m "\M-*" 'gtags-pop-stack)
+    (define-key m "\^?"  'scroll-down)
+    (define-key m " "    'scroll-up)
+    (define-key m "\C-b" 'scroll-down)
+    (define-key m "\C-f" 'scroll-up)
+    (define-key m "k"    'previous-line)
+    (define-key m "j"    'next-line)
+    (define-key m "p"    'previous-line)
+    (define-key m "n"    'next-line)
+    (define-key m "q"    'gtags-pop-stack)
+    (define-key m "u"    'gtags-pop-stack)
+    (define-key m "\C-t" 'gtags-pop-stack)
+    (define-key m "\C-m" 'gtags-select-tag)
+    (define-key m "\C-o" 'gtags-select-tag-other-window)
+    (define-key m "\M-." 'gtags-select-tag)
+    m)
   "Keymap used in gtags select mode.")
-(define-key gtags-select-mode-map "\e*" 'gtags-pop-stack)
-(define-key gtags-select-mode-map "\^?" 'scroll-down)
-(define-key gtags-select-mode-map " " 'scroll-up)
-(define-key gtags-select-mode-map "\C-b" 'scroll-down)
-(define-key gtags-select-mode-map "\C-f" 'scroll-up)
-(define-key gtags-select-mode-map "k" 'previous-line)
-(define-key gtags-select-mode-map "j" 'next-line)
-(define-key gtags-select-mode-map "p" 'previous-line)
-(define-key gtags-select-mode-map "n" 'next-line)
-(define-key gtags-select-mode-map "q" 'gtags-pop-stack)
-(define-key gtags-select-mode-map "u" 'gtags-pop-stack)
-(define-key gtags-select-mode-map "\C-t" 'gtags-pop-stack)
-(define-key gtags-select-mode-map "\C-m" 'gtags-select-tag)
-(define-key gtags-select-mode-map "\C-o" 'gtags-select-tag-other-window)
-(define-key gtags-select-mode-map "\e." 'gtags-select-tag)
 
 ;;
 ;; utility
