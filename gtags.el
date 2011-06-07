@@ -170,8 +170,8 @@
 
 ;; push current context to stack
 (defun gtags-push-context ()
-  (setq gtags-buffer-stack (cons (current-buffer) gtags-buffer-stack))
-  (setq gtags-point-stack (cons (point) gtags-point-stack)))
+  (push (current-buffer) gtags-buffer-stack)
+  (push (point) gtags-point-stack))
 
 ;; pop context from stack
 (defun gtags-pop-context ()
