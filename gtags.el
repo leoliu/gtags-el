@@ -211,16 +211,6 @@
 (defun gtags-exist-in-stack (buffer)
   (memq buffer gtags-buffer-stack))
 
-;; get current line number
-(defun gtags-current-lineno ()
-  (if (= 0 (count-lines (point-min) (point-max)))
-      0
-    (save-excursion
-      (end-of-line)
-      (if (equal (point-min) (point))
-          1
-        (count-lines (point-min) (point))))))
-
 ;; completsion function for completing-read.
 (defun gtags-completing-gtags (string predicate code)
   (gtags-completing 'gtags string predicate code))
@@ -394,7 +384,8 @@
 (defun gtags-display-browser ()
   "Display current screen on hypertext browser."
   (interactive)
-  (call-process "gozilla"  nil nil nil (concat "+" (number-to-string (gtags-current-lineno))) buffer-file-name))
+  (call-process "gozilla"  nil nil nil
+                (format "+%d" (line-number-at-pos)) buffer-file-name))
 
 ; Private event-point
 ; (If there is no event-point then we use this version.
@@ -487,7 +478,7 @@
     ; Use always ctags-x format.
     (setq option "-x")
     (if (char-equal flag-char ?C)
-        (setq context (concat "--from-here=" (number-to-string (gtags-current-lineno)) ":" buffer-file-name))
+        (setq context (format "--from-here=%d:%s" (line-number-at-pos) buffer-file-name))
         (setq option (concat option flag)))
     (cond
      ((char-equal flag-char ?C)
