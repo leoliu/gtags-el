@@ -275,15 +275,11 @@
 
 ;; get the path of gtags root directory.
 (defun gtags-get-rootpath ()
-  (let (path buffer)
-    (save-excursion
-      (setq buffer (generate-new-buffer (generate-new-buffer-name "*rootdir*")))
-      (set-buffer buffer)
-      (setq n (call-process "global" nil t nil "-pr"))
-      (if (= n 0)
-        (setq path (file-name-as-directory (buffer-substring (point-min)(1- (point-max))))))
-      (kill-buffer buffer))
-    path))
+  (with-temp-buffer
+    (when (zerop (call-process "global" nil t nil "-pr"))
+      (goto-char (point-min))
+      (file-name-as-directory
+       (buffer-substring (line-beginning-position) (line-end-position))))))
 
 ;; decode path name
 ;; The path is encoded by global(1) with the --encode-path="..." option.
@@ -293,7 +289,7 @@
     (while (setq start (string-match "%\\([0-9a-f][0-9a-f]\\)" path))
       (setq result (concat result
                      (substring path 0 start)
-                     (format "%c" (string-to-int (substring path (match-beginning 1) (match-end 1)) 16))))
+                     (format "%c" (string-to-number (substring path (match-beginning 1) (match-end 1)) 16))))
       (setq path (substring path (match-end 1))))
     (concat result path)))
 ;;
@@ -634,7 +630,8 @@
 	    (find-file-other-window file)))
         (if delete (kill-buffer prev-buffer)))
       (setq gtags-current-buffer (current-buffer))
-      (goto-line line)
+      (goto-char (point-min))
+      (forward-line (1- line))
       (gtags-mode 1))))
 
 ;; make complete list (do nothing)
