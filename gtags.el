@@ -199,13 +199,8 @@
 
 ;; pop context from stack
 (defun gtags-pop-context ()
-  (if (not gtags-buffer-stack) nil
-    (let (buffer point)
-      (setq buffer (car gtags-buffer-stack))
-      (setq gtags-buffer-stack (cdr gtags-buffer-stack))
-      (setq point (car gtags-point-stack))
-      (setq gtags-point-stack (cdr gtags-point-stack))
-      (list buffer point))))
+  (when gtags-buffer-stack
+    (list (pop gtags-buffer-stack) (pop gtags-point-stack))))
 
 ;; if the buffer exist in the stack
 (defun gtags-exist-in-stack (buffer)
