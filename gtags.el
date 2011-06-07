@@ -231,37 +231,33 @@
 ;; common part of completing-XXXX
 ;;   flag: 'gtags or 'gsyms or 'files
 (defun gtags-completing (flag string predicate code)
-  ; The purpose of using the -n option for the -P command is to exclude
-  ; dependence on the execution directory.
+  ;; The purpose of using the -n option for the -P command is to exclude
+  ;; dependence on the execution directory.
   (let ((option (cond ((eq flag 'files) "-Pon")
                       ((eq flag 'gsyms)  "-cs")
                       (t                "-c")))
-        (complete-list (make-vector 63 0))
-        (prev-buffer (current-buffer)))
-    ; build completion list
-    (set-buffer (generate-new-buffer "*Completions*"))
-    (call-process "global" nil t nil option string)
-    (goto-char (point-min))
-    ;
-    ; The specification of the completion for files is different from that for symbols.
-    ; The completion for symbols matches only to the head of the symbol. But the completion
-    ; for files matches any part of the path.
-    ;
-    (if (eq flag 'files)
-        ; extract input string and the following part.
-        (let ((match-string (if (equal "" string) "\./\\(.*\\)" (concat ".*\\(" string ".*\\)"))))
-          (while (not (eobp))
-            (looking-at match-string)
-            (intern (match-string 1) complete-list)
-            (forward-line)))
-      (while (not (eobp))
-        (looking-at gtags-symbol-regexp)
-        (intern (match-string 0) complete-list)
-        (forward-line)))
-    (kill-buffer (current-buffer))
-    ; recover current buffer
-    (set-buffer prev-buffer)
-    ; execute completion
+        (complete-list (make-vector 63 0)))
+    ;; build completion list
+    (with-current-buffer (get-buffer-create "*Completions*")
+      (call-process "global" nil t nil option string)
+      (goto-char (point-min))
+      ;;
+      ;; The specification of the completion for files is different from that for symbols.
+      ;; The completion for symbols matches only to the head of the symbol. But the completion
+      ;; for files matches any part of the path.
+      ;;
+      (if (eq flag 'files)
+                                        ; extract input string and the following part.
+          (let ((match-string (if (equal "" string) "\./\\(.*\\)" (concat ".*\\(" string ".*\\)"))))
+            (while (not (eobp))
+              (looking-at match-string)
+              (intern (match-string 1) complete-list)
+              (forward-line)))
+        (while (not (eobp))
+          (looking-at gtags-symbol-regexp)
+          (intern (match-string 0) complete-list)
+          (forward-line))))
+    ;; execute completion
     (cond ((eq code nil)
            (try-completion string complete-list predicate))
           ((eq code t)
