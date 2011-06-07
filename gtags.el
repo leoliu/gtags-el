@@ -387,13 +387,6 @@
   (call-process "gozilla"  nil nil nil
                 (format "+%d" (line-number-at-pos)) buffer-file-name))
 
-; Private event-point
-; (If there is no event-point then we use this version.
-(eval-and-compile
-  (if (not (fboundp 'event-point))
-      (defun event-point (event)
-	(posn-point (event-start event)))))
-
 (defun gtags-find-tag-by-event (event)
   "Get the expression as a tagname around here and move there."
   (interactive "e")
