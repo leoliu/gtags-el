@@ -281,17 +281,6 @@
       (file-name-as-directory
        (buffer-substring (line-beginning-position) (line-end-position))))))
 
-;; decode path name
-;; The path is encoded by global(1) with the --encode-path="..." option.
-;; A blank is encoded to %20.
-(defun gtags-decode-pathname (path)
-  (let (start result)
-    (while (setq start (string-match "%\\([0-9a-f][0-9a-f]\\)" path))
-      (setq result (concat result
-                     (substring path 0 start)
-                     (format "%c" (string-to-number (substring path (match-beginning 1) (match-end 1)) 16))))
-      (setq path (substring path (match-end 1))))
-    (concat result path)))
 ;;
 ;; interactive command
 ;;
@@ -612,7 +601,9 @@
     (if (not (looking-at "[^ \t]+[ \t]+\\([0-9]+\\)[ \t]\\([^ \t]+\\)[ \t]"))
         (gtags-pop-context)
       (setq line (string-to-number (gtags-match-string 1)))
-      (setq file (gtags-decode-pathname (gtags-match-string 2)))
+      ;; decode path name
+      ;; The path is encoded by global(1) with the --encode-path="..." option.
+      (setq file (url-unhex-string (gtags-match-string 2)))
       ;;
       ;; Why should we load new file before killing current-buffer?
       ;;
