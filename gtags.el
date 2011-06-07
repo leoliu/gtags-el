@@ -238,7 +238,9 @@
       ;;
       (if (eq flag 'files)
                                         ; extract input string and the following part.
-          (let ((match-string (if (equal "" string) "\./\\(.*\\)" (concat ".*\\(" string ".*\\)"))))
+          (let ((match-string (if (equal "" string)
+                                  "\./\\(.*\\)"
+                                (concat ".*\\(" string ".*\\)"))))
             (while (not (eobp))
               (looking-at match-string)
               (intern (match-string 1) complete-list)
@@ -253,7 +255,7 @@
           ((eq code t)
            (all-completions string complete-list predicate))
           ((eq code 'lambda)
-           (if (intern-soft string complete-list) t nil)))))
+           (and (intern-soft string complete-list) t)))))
 
 ;; get the path of gtags root directory.
 (defun gtags-get-rootpath ()
@@ -271,16 +273,15 @@
   (interactive)
   (let (path input n)
     (if gtags-rootdir
-      (setq path gtags-rootdir)
-     (setq path (gtags-get-rootpath))
-     (if (equal path nil)
-       (setq path default-directory)))
+        (setq path gtags-rootdir)
+      (setq path (gtags-get-rootpath))
+      (or path (setq path default-directory)))
     (setq input (read-file-name "Visit root directory: " path path t))
-    (if (equal "" input) nil
+    (unless (equal "" input)
       (if (not (file-directory-p input))
-        (message "%s is not directory." input)
-       (setq gtags-rootdir (expand-file-name input))
-       (setenv "GTAGSROOT" gtags-rootdir)))))
+          (message "%s is not directory." input)
+        (setq gtags-rootdir (expand-file-name input))
+        (setenv "GTAGSROOT" gtags-rootdir)))))
 
 (defun gtags-find-tag (&optional other-win)
   "Input tag name and move to the definition."
@@ -391,7 +392,7 @@
   "Get the expression as a tagname around here and move there."
   (interactive "e")
   (let (tagname flag)
-    (if (= 0 (count-lines (point-min) (point-max)))
+    (if (zerop (count-lines (point-min) (point-max)))
         (progn (setq tagname "main")
                (setq flag ""))
       (select-window (posn-window (event-end event)))
@@ -399,8 +400,7 @@
       (goto-char (posn-point (event-end event)))
       (setq tagname (gtags-current-token))
       (setq flag "C"))
-    (if (not tagname)
-        nil
+    (when tagname
       (gtags-push-context)
       (gtags-goto-tag tagname flag))))
 
@@ -472,7 +472,7 @@
     (setq option "-x")
     (if (char-equal flag-char ?C)
         (setq context (format "--from-here=%d:%s" (line-number-at-pos) buffer-file-name))
-        (setq option (concat option flag)))
+      (setq option (concat option flag)))
     (cond
      ((char-equal flag-char ?C)
       (setq prefix "(CONTEXT)"))
@@ -491,31 +491,29 @@
       (setq prefix "(R)"))
      (t (setq prefix "(D)")))
     ;; load tag
-    (if gtags-select-buffer-single
-        (progn
-          ; delete "*GTAGS SELECT*" buffer info from gtags-buffer-stack and gtags-point-stack
-          (let (now-gtags-buffer-stack now-buffer now-gtags-point-stack now-point)
-            (setq now-gtags-buffer-stack (reverse gtags-buffer-stack))
-            (setq now-gtags-point-stack (reverse gtags-point-stack))
-            (setq gtags-buffer-stack nil)
-            (setq gtags-point-stack nil)
-            (while now-gtags-buffer-stack
-              (setq now-buffer (car now-gtags-buffer-stack))
-              (setq now-point (car now-gtags-point-stack))
-              (if (and (buffer-name now-buffer) (not (string-match "*GTAGS SELECT*" (buffer-name now-buffer))))
-                  (progn
-                    (setq gtags-buffer-stack (cons now-buffer gtags-buffer-stack))
-                    (setq gtags-point-stack (cons now-point gtags-point-stack))))
-              (setq now-gtags-buffer-stack (cdr now-gtags-buffer-stack))
-              (setq now-gtags-point-stack (cdr now-gtags-point-stack))))
-          ; kill "*GTAGS SELECT*" buffer
-          (let (now-buffer-list now-buffer)
-            (setq now-buffer-list (buffer-list))
-            (while now-buffer-list
-              (setq now-buffer (car now-buffer-list))
-              (if (string-match "*GTAGS SELECT*" (buffer-name now-buffer))
-                  (kill-buffer now-buffer))
-              (setq now-buffer-list (cdr now-buffer-list))))))
+    (when gtags-select-buffer-single
+      ;; delete "*GTAGS SELECT*" buffer info from gtags-buffer-stack and gtags-point-stack
+      (let (now-gtags-buffer-stack now-buffer now-gtags-point-stack now-point)
+        (setq now-gtags-buffer-stack (reverse gtags-buffer-stack))
+        (setq now-gtags-point-stack (reverse gtags-point-stack))
+        (setq gtags-buffer-stack nil)
+        (setq gtags-point-stack nil)
+        (while now-gtags-buffer-stack
+          (setq now-buffer (car now-gtags-buffer-stack))
+          (setq now-point (car now-gtags-point-stack))
+          (when (and (buffer-name now-buffer) (not (string-match "*GTAGS SELECT*" (buffer-name now-buffer))))
+            (setq gtags-buffer-stack (cons now-buffer gtags-buffer-stack))
+            (setq gtags-point-stack (cons now-point gtags-point-stack)))
+          (setq now-gtags-buffer-stack (cdr now-gtags-buffer-stack))
+          (setq now-gtags-point-stack (cdr now-gtags-point-stack))))
+                                        ; kill "*GTAGS SELECT*" buffer
+      (let (now-buffer-list now-buffer)
+        (setq now-buffer-list (buffer-list))
+        (while now-buffer-list
+          (setq now-buffer (car now-buffer-list))
+          (and (string-match "*GTAGS SELECT*" (buffer-name now-buffer))
+               (kill-buffer now-buffer))
+          (setq now-buffer-list (cdr now-buffer-list)))))
     (setq buffer (generate-new-buffer (generate-new-buffer-name (concat "*GTAGS SELECT* " prefix tagname))))
     (set-buffer buffer)
     ;
@@ -646,26 +644,25 @@ with no args, if that value is non-nil."
       (setq minor-mode-map-alist
       (cons (cons 'gtags-mode gtags-mode-map) minor-mode-map-alist)))
   (setq gtags-mode
-      (if (null forces) (not gtags-mode)
+      (if (null forces)
+          (not gtags-mode)
         (> (prefix-numeric-value forces) 0)))
   (run-hooks 'gtags-mode-hook)
-  ; Suggested key mapping
-  (if gtags-suggested-key-mapping
-      (progn
-        (define-key gtags-mode-map "\eh" 'gtags-display-browser)
-        (define-key gtags-mode-map "\C-]" 'gtags-find-tag-from-here)
-        (define-key gtags-mode-map "\C-t" 'gtags-pop-stack)
-        (define-key gtags-mode-map "\eP" 'gtags-find-file)
-        (define-key gtags-mode-map "\ef" 'gtags-parse-file)
-        (define-key gtags-mode-map "\eg" 'gtags-find-with-grep)
-        (define-key gtags-mode-map "\eI" 'gtags-find-with-idutils)
-        (define-key gtags-mode-map "\es" 'gtags-find-symbol)
-        (define-key gtags-mode-map "\er" 'gtags-find-rtag)
-        (define-key gtags-mode-map "\et" 'gtags-find-tag)
-        (define-key gtags-mode-map "\ev" 'gtags-visit-rootdir))
-      nil)
+  ;; Suggested key mapping
+  (when gtags-suggested-key-mapping
+    (define-key gtags-mode-map "\eh" 'gtags-display-browser)
+    (define-key gtags-mode-map "\C-]" 'gtags-find-tag-from-here)
+    (define-key gtags-mode-map "\C-t" 'gtags-pop-stack)
+    (define-key gtags-mode-map "\eP" 'gtags-find-file)
+    (define-key gtags-mode-map "\ef" 'gtags-parse-file)
+    (define-key gtags-mode-map "\eg" 'gtags-find-with-grep)
+    (define-key gtags-mode-map "\eI" 'gtags-find-with-idutils)
+    (define-key gtags-mode-map "\es" 'gtags-find-symbol)
+    (define-key gtags-mode-map "\er" 'gtags-find-rtag)
+    (define-key gtags-mode-map "\et" 'gtags-find-tag)
+    (define-key gtags-mode-map "\ev" 'gtags-visit-rootdir))
   ; Mouse key mapping
-  (if gtags-disable-pushy-mouse-mapping nil
+  (unless gtags-disable-pushy-mouse-mapping
     (define-key gtags-mode-map [mouse-3] 'gtags-pop-stack)
     (define-key gtags-mode-map [mouse-2] 'gtags-find-tag-by-event)))
 
@@ -693,8 +690,8 @@ Turning on Gtags-Select mode calls the value of the variable
   (goto-char (point-min))
   (message "[GTAGS SELECT MODE] %d lines" (count-lines (point-min) (point-max)))
   (run-hooks 'gtags-select-mode-hook)
-  ; Mouse key mapping
-  (if gtags-disable-pushy-mouse-mapping nil
+  ;; Mouse key mapping
+  (unless gtags-disable-pushy-mouse-mapping
     (define-key gtags-select-mode-map [mouse-3] 'gtags-pop-stack)
     (define-key gtags-select-mode-map [mouse-2] 'gtags-select-tag-by-event)))
 
