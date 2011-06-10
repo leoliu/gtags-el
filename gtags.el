@@ -300,12 +300,9 @@
 (defun gtags-find-tag-from-here ()
   "Get the expression as a tagname around here and move there."
   (interactive)
-  (let (tagname flag)
-    (setq tagname (gtags-current-token))
-    (if (not tagname)
-        nil
-      (gtags-push-context)
-      (gtags-goto-tag tagname "C"))))
+  (when (gtags-current-token)
+    (gtags-push-context)
+    (gtags-goto-tag (gtags-current-token) "C")))
 
 ; This function doesn't work with mozilla.
 ; But I will support it in the near future.
