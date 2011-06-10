@@ -154,19 +154,14 @@
 ;;
 ;; Return a default tag to search for, based on the text at point.
 (defun gtags-current-token ()
-  (cond
-   ((looking-at "[0-9A-Za-z_]")
-    (while (and (not (bolp)) (looking-at "[0-9A-Za-z_]"))
-      (forward-char -1))
-    (unless (looking-at "[0-9A-Za-z_]")
-      (forward-char 1)))
-   (t
-    (while (looking-at "[ \t]")
-      (forward-char 1))))
-  (when (and (bolp) (looking-at gtags-definition-regexp))
-    (goto-char (match-end 0)))
-  (when (looking-at gtags-symbol-regexp)
-    (match-string 0)))
+  (save-excursion
+    (if (looking-back "[0-9A-Za-z_]")
+        (skip-chars-backward "0-9A-Za-z_" (line-beginning-position))
+      (skip-chars-forward " \t\n"))
+    (when (looking-at gtags-definition-regexp)
+      (goto-char (match-end 0)))
+    (when (looking-at gtags-symbol-regexp)
+      (match-string 0))))
 
 ;; push current context to stack
 (defun gtags-push-context ()
