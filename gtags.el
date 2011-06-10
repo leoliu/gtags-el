@@ -109,7 +109,7 @@
 (defvar gtags-point-stack nil
   "Stack for tag browsing.")
 
-(defvar gtags-history-list nil
+(defvar gtags-history nil
   "Gtags history list.")
 
 (defconst gtags-symbol-regexp "[A-Za-z_][A-Za-z_0-9]*"
@@ -177,44 +177,33 @@
 (defun gtags-exist-in-stack (buffer)
   (memq buffer gtags-buffer-stack))
 
-;; completsion function for completing-read.
-(defun gtags-completing-gtags (string predicate code)
-  (gtags-completing 'gtags string predicate code))
-(defun gtags-completing-gsyms (string predicate code)
-  (gtags-completing 'gsyms string predicate code))
-(defun gtags-completing-files (string predicate code)
-  (gtags-completing 'files string predicate code))
-;; common part of completing-XXXX
-;;   flag: 'gtags or 'gsyms or 'files
 (defun gtags-completing (flag string predicate code)
-  ;; The purpose of using the -n option for the -P command is to exclude
-  ;; dependence on the execution directory.
-  (let ((option (cond ((eq flag 'files) "-Pon")
-                      ((eq flag 'gsyms)  "-cs")
-                      (t                "-c")))
-        (complete-list (make-vector 63 0)))
+  "FLAG is either symbol, file or tag."
+  ;; The purpose of using the -n option for the -P command is to
+  ;; exclude dependence on the execution directory.
+  (let ((option (cond ((eq flag 'file)   "-Pon")
+                      ((eq flag 'symbol) "-cs")
+                      (t                 "-c")))
+        (complete-list (make-vector 67 0)))
     ;; build completion list
-    (with-current-buffer (get-buffer-create "*Completions*")
+    (with-temp-buffer
       (call-process "global" nil t nil option string)
       (goto-char (point-min))
       ;;
-      ;; The specification of the completion for files is different from that for symbols.
-      ;; The completion for symbols matches only to the head of the symbol. But the completion
-      ;; for files matches any part of the path.
+      ;; The specification of the completion for files is different
+      ;; from that for symbols. The completion for symbols matches
+      ;; only to the head of the symbol. But the completion for files
+      ;; matches any part of the path.
       ;;
-      (if (eq flag 'files)
-                                        ; extract input string and the following part.
-          (let ((match-string (if (equal "" string)
-                                  "\./\\(.*\\)"
-                                (concat ".*\\(" string ".*\\)"))))
-            (while (not (eobp))
-              (looking-at match-string)
-              (intern (match-string 1) complete-list)
-              (forward-line)))
-        (while (not (eobp))
-          (looking-at gtags-symbol-regexp)
-          (intern (match-string 0) complete-list)
-          (forward-line))))
+      (if (eq flag 'file)
+          ;; Extract input string and the following part.
+          (let ((regexp (if (equal "" string)
+                            "\./\\(.*\\)"
+                          (concat ".*\\(" string ".*\\)"))))
+            (while (re-search-forward regexp nil t)
+              (intern (match-string 1) complete-list)))
+        (while (re-search-forward gtags-symbol-regexp nil t)
+          (intern (match-string 0) complete-list))))
     ;; execute completion
     (cond ((eq code nil)
            (try-completion string complete-list predicate))
@@ -222,6 +211,16 @@
            (all-completions string complete-list predicate))
           ((eq code 'lambda)
            (and (intern-soft string complete-list) t)))))
+
+(defun gtags-read-tagname (flag type)
+  "See `gtags-completing' for the meaning of FLAG."
+  (let* ((default (gtags-current-token))
+         (prompt (if default
+                     (format "Find %s: (default %s) " type default)
+                   (format "Find %s: " type))))
+    (completing-read prompt (lambda (string predicate code)
+                              (gtags-completing flag string predicate code))
+                     nil nil nil 'gtags-history default)))
 
 ;; get the path of gtags root directory.
 (defun gtags-get-rootpath ()
@@ -249,54 +248,28 @@
         (setq gtags-rootdir (expand-file-name input))
         (setenv "GTAGSROOT" gtags-rootdir)))))
 
-(defun gtags-find-tag (&optional other-win)
+(defun gtags-find-tag (tagname &optional other-win)
   "Input tag name and move to the definition."
-  (interactive)
-  (let (tagname prompt input)
-    (setq tagname (gtags-current-token))
-    (if tagname
-        (setq prompt (concat "Find tag: (default " tagname ") "))
-      (setq prompt "Find tag: "))
-    (setq input (completing-read prompt 'gtags-completing-gtags
-                                 nil nil nil gtags-history-list))
-    (if (not (equal "" input))
-        (setq tagname input))
-    (gtags-push-context)
-    (gtags-goto-tag tagname "" other-win)))
+  (interactive (list (gtags-read-tagname 'tag "tag")))
+  (gtags-push-context)
+  (gtags-goto-tag tagname "" other-win))
 
-(defun gtags-find-tag-other-window ()
+(defun gtags-find-tag-other-window (tagname)
   "Input tag name and move to the definition in other window."
-  (interactive)
-  (gtags-find-tag t))
+  (interactive (list (gtags-read-tagname 'tag "tag")))
+  (gtags-find-tag tagname t))
 
-(defun gtags-find-rtag ()
+(defun gtags-find-rtag (tagname)
   "Input tag name and move to the referenced point."
-  (interactive)
-  (let (tagname prompt input)
-    (setq tagname (gtags-current-token))
-    (if tagname
-        (setq prompt (concat "Find tag (reference): (default " tagname ") "))
-      (setq prompt "Find tag (reference): "))
-    (setq input (completing-read prompt 'gtags-completing-gtags
-                                 nil nil nil gtags-history-list))
-    (if (not (equal "" input))
-        (setq tagname input))
-    (gtags-push-context)
-    (gtags-goto-tag tagname "r")))
+  (interactive (list (gtags-read-tagname 'tag "reference")))
+  (gtags-push-context)
+  (gtags-goto-tag tagname "r"))
 
-(defun gtags-find-symbol ()
+(defun gtags-find-symbol (tagname)
   "Input symbol and move to the locations."
-  (interactive)
-  (let (tagname prompt input)
-    (setq tagname (gtags-current-token))
-    (if tagname
-        (setq prompt (concat "Find symbol: (default " tagname ") "))
-      (setq prompt "Find symbol: "))
-    (setq input (completing-read prompt 'gtags-completing-gsyms
-                                 nil nil nil gtags-history-list))
-    (if (not (equal "" input)) (setq tagname input))
-    (gtags-push-context)
-    (gtags-goto-tag tagname "s")))
+  (interactive (list (gtags-read-tagname 'symbol "symbol")))
+  (gtags-push-context)
+  (gtags-goto-tag tagname "s"))
 
 (defun gtags-find-pattern ()
   "Input pattern, search with grep(1) and move to the locations."
@@ -313,16 +286,11 @@
   (interactive)
   (gtags-find-with "I"))
 
-(defun gtags-find-file ()
+(defun gtags-find-file (tagname)
   "Input pattern and move to the top of the file."
-  (interactive)
-  (let (tagname prompt input)
-    (setq prompt "Find files: ")
-    (setq input (completing-read prompt 'gtags-completing-files
-                                 nil nil nil gtags-history-list))
-    (if (not (equal "" input)) (setq tagname input))
-    (gtags-push-context)
-    (gtags-goto-tag tagname "Po")))
+  (interactive (list (gtags-read-tagname 'file "files")))
+  (gtags-push-context)
+  (gtags-goto-tag tagname "Po"))
 
 (defun gtags-parse-file ()
   "Input file name and show the list of tags in it."
@@ -418,16 +386,8 @@
 
 ;; find with grep or idutils.
 (defun gtags-find-with (flag)
-  (let (tagname prompt input)
-    (setq tagname (gtags-current-token))
-    (if tagname
-        (setq prompt (concat "Find pattern: (default " tagname ") "))
-      (setq prompt "Find pattern: "))
-    (setq input (completing-read prompt 'gtags-completing-gtags
-                                 nil nil nil gtags-history-list))
-    (if (not (equal "" input)) (setq tagname input))
-    (gtags-push-context)
-    (gtags-goto-tag tagname flag)))
+  (gtags-push-context)
+  (gtags-goto-tag (gtags-read-tagname 'tag "pattern") flag))
 
 ;; goto tag's point
 (defun gtags-goto-tag (tagname flag &optional other-win)
