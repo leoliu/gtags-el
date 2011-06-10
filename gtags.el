@@ -236,17 +236,10 @@
 (defun gtags-visit-rootdir ()
   "Tell tags commands the root directory of source tree."
   (interactive)
-  (let (path input n)
-    (if gtags-rootdir
-        (setq path gtags-rootdir)
-      (setq path (gtags-get-rootpath))
-      (or path (setq path default-directory)))
-    (setq input (read-file-name "Visit root directory: " path path t))
-    (unless (equal "" input)
-      (if (not (file-directory-p input))
-          (message "%s is not directory." input)
-        (setq gtags-rootdir (expand-file-name input))
-        (setenv "GTAGSROOT" gtags-rootdir)))))
+  (let* ((default (or (gtags-get-rootpath) gtags-rootdir default-directory))
+         (root (read-directory-name "Visit root directory: " default nil t)))
+    (setq gtags-rootdir (expand-file-name root))
+    (setenv "GTAGSROOT" gtags-rootdir)))
 
 (defun gtags-find-tag (tagname &optional other-win)
   "Input tag name and move to the definition."
